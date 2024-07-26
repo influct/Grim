@@ -15,6 +15,10 @@ alerts:
     # Should the alerts received from other servers be announced to this server?
     receive: false
 
+disabled-world-checks:
+  mines:
+    - ""
+
 verbose:
   print-to-console: false
 

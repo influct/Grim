@@ -44,6 +44,12 @@ import io.github.retrooper.packetevents.adventure.serializer.legacy.LegacyCompon
 import io.github.retrooper.packetevents.util.folia.FoliaScheduler;
 import io.github.retrooper.packetevents.util.viaversion.ViaVersionUtil;
 import io.netty.channel.Channel;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TranslatableComponent;
 import org.bukkit.Bukkit;
@@ -51,13 +57,6 @@ import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 // Everything in this class should be sync'd to the anticheat thread.
 // Put variables sync'd to the netty thread in PacketStateData
@@ -707,6 +706,12 @@ public class GrimPlayer implements GrimUser {
     public void runNettyTaskInMs(Runnable runnable, int ms) {
         Channel channel = (Channel) user.getChannel();
         channel.eventLoop().schedule(runnable, ms, TimeUnit.MILLISECONDS);
+    }
+
+    public String worldName() {
+        if(bukkitPlayer == null) return "";
+
+        return bukkitPlayer.getWorld().getName();
     }
 
 }

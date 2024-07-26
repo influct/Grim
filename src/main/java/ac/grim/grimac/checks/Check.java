@@ -7,6 +7,8 @@ import ac.grim.grimac.player.GrimPlayer;
 import com.github.retrooper.packetevents.protocol.packettype.PacketType;
 import com.github.retrooper.packetevents.protocol.packettype.PacketTypeCommon;
 import github.scarsz.configuralize.DynamicConfig;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
 import org.bukkit.Bukkit;
@@ -56,6 +58,11 @@ public class Check implements AbstractCheck {
     }
 
     public boolean shouldModifyPackets() {
+        if(GrimAPI.INSTANCE.getConfigManager().getConfig().getStringListElse("disabled-world-checks."+player.worldName(),
+                new ArrayList<>())
+            .contains(checkName)) {
+            return false;
+        }
         return isEnabled && !player.disableGrim && !player.noModifyPacketPermission;
     }
 
