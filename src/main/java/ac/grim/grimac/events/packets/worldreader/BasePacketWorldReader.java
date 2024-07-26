@@ -2,6 +2,7 @@ package ac.grim.grimac.events.packets.worldreader;
 
 import ac.grim.grimac.GrimAPI;
 import ac.grim.grimac.player.GrimPlayer;
+import ac.grim.grimac.utils.anticheat.LogUtil;
 import ac.grim.grimac.utils.chunks.Column;
 import ac.grim.grimac.utils.data.TeleportData;
 import com.github.retrooper.packetevents.event.PacketListenerAbstract;
@@ -131,7 +132,7 @@ public class BasePacketWorldReader extends PacketListenerAbstract {
                     // You are able to set blocks inside it, and they do apply, it just always returns air despite what its data says
                     // So go ahead, corrupt the player's empty chunk and make it no longer all air, it doesn't matter
                     //
-                    // LogUtil.warn("Invalid non-ground up continuous sent for empty chunk " + chunkX + " " + chunkZ + " for " + player.user.getProfile().getName() + "! This corrupts the player's empty chunk!");
+                     LogUtil.warn("Invalid non-ground up continuous sent for empty chunk " + chunkX + " " + chunkZ + " for " + player.user.getProfile().getName() + "! This corrupts the player's empty chunk!");
                     return;
                 }
                 existingColumn.mergeChunks(chunks);

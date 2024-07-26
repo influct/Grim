@@ -379,6 +379,9 @@ public class CheckManagerListener extends PacketListenerAbstract {
         if (event.getConnectionState() != ConnectionState.PLAY) return;
         GrimPlayer player = GrimAPI.INSTANCE.getPlayerDataManager().getPlayer(event.getUser());
         if (player == null) return;
+        if(player.bukkitPlayer != null) {
+            if(player.bukkitPlayer.getWorld().getName().equals("mines")) return;
+        }
 
         // Determine if teleport BEFORE we call the pre-prediction vehicle
         if (event.getPacketType() == PacketType.Play.Client.VEHICLE_MOVE) {
@@ -832,6 +835,9 @@ public class CheckManagerListener extends PacketListenerAbstract {
         if (event.getConnectionState() != ConnectionState.PLAY) return;
         GrimPlayer player = GrimAPI.INSTANCE.getPlayerDataManager().getPlayer(event.getUser());
         if (player == null) return;
+        if(player.bukkitPlayer != null) {
+            if(player.bukkitPlayer.getWorld().getName().equals("mines")) return;
+        }
 
         player.checkManager.onPacketSend(event);
     }
