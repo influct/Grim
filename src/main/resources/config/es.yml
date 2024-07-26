@@ -1,6 +1,6 @@
 # La configuración principal de GrimAC
 # Código fuente: https://github.com/MWHunter/Grim
-# Copyright 2022 DefineOutside y contribuyentes, licenciado bajo GPLv3.
+# Copyright 2024 DefineOutside y contribuyentes, licenciado bajo GPLv3.
 # Binarios modificados o plugins con código de Grim deben ser privados o con
 # el código fuente disponible para todos los compradores sin costo adicional.
 
@@ -36,6 +36,14 @@ spectators:
 # ¿Cuánto tiempo de espera debería pasar antes de expulsar un jugador por "tiempo de espera agotado"?
 # Por defecto, este valor se encuentra en 60 segundos.
 max-transaction-time: 60
+
+# Should the duplicate movement packet be cancelled?
+# Mojang has fixed this issue in 1.21. This was their attempt to fix the "bucket desync". https://bugs.mojang.com/browse/MC-12363
+# This setting only applies to 1.17-1.20.5 clients on 1.8 servers.
+cancel-duplicate-packet: true
+
+# Whether or not to ignore the rotation in duplicate packets
+ignore-duplicate-packet-rotation: false
 
 Simulation:
   # Por cuanto deberíamos multiplicar la ventaja total cuando el jugador es legítimo
@@ -170,5 +178,14 @@ experimental-checks: false
 # cuando deberíamos simplemente expulsar al jugador? Esto es obligatorio ya que algunos limitadores de paquetes
 # no cuentan los paquetes cancelados por Grim.
 packet-spam-threshold: 100
+
+# Grim puede hacer cumplir que un jugador que no está en estado de vuelo no pueda tener más de X milisegundos de ping.
+# Esto se debe a que Grim actualmente no revisa a los jugadores que están volando.
+# To disable, use -1
+max-ping-out-of-flying: 1000
+
+# Maximum ping when a firework boost is removed from the player.
+# This prevents high latency players from being able to use 1 firework boost with an elytra forever.
+max-ping-firework-boost: 1000
 
 config-version: 9

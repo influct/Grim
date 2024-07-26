@@ -107,6 +107,10 @@ public class CompensatedInventory extends Check implements PacketCheck {
         inventory.getInventoryStorage().handleClientClaimedSlotSet(playerInvSlotclicked);
     }
 
+    public ItemStack getItemInHand(InteractionHand hand) {
+        return hand == InteractionHand.MAIN_HAND ? getHeldItem() : getOffHand();
+    }
+
     private void markServerForChangingSlot(int clicked, int windowID) {
         // Unsupported inventory
         if (packetSendingInventorySize == -2) return;
@@ -259,12 +263,12 @@ public class CompensatedInventory extends Check implements PacketCheck {
         }
 
         if (event.getPacketType() == PacketType.Play.Client.HELD_ITEM_CHANGE) {
-            WrapperPlayClientHeldItemChange slot = new WrapperPlayClientHeldItemChange(event);
+            final int slot = new WrapperPlayClientHeldItemChange(event).getSlot();
 
             // Stop people from spamming the server with an out-of-bounds exception
-            if (slot.getSlot() > 8) return;
+            if (slot > 8 || slot < 0) return;
 
-            inventory.selected = slot.getSlot();
+            inventory.selected = slot;
         }
 
         if (event.getPacketType() == PacketType.Play.Client.CREATIVE_INVENTORY_ACTION) {

@@ -1,8 +1,8 @@
 package ac.grim.grimac.checks;
 
-import ac.grim.grimac.AbstractCheck;
 import ac.grim.grimac.GrimAPI;
-import ac.grim.grimac.events.FlagEvent;
+import ac.grim.grimac.api.AbstractCheck;
+import ac.grim.grimac.api.events.FlagEvent;
 import ac.grim.grimac.player.GrimPlayer;
 import com.github.retrooper.packetevents.protocol.packettype.PacketType;
 import com.github.retrooper.packetevents.protocol.packettype.PacketTypeCommon;
@@ -23,10 +23,16 @@ public class Check implements AbstractCheck {
     private String checkName;
     private String configName;
     private String alternativeName;
+    private String description;
 
     private boolean experimental;
     @Setter
     private boolean isEnabled;
+
+    @Override
+    public boolean isExperimental() {
+        return experimental;
+    }
 
     public Check(final GrimPlayer player) {
         this.player = player;
@@ -43,6 +49,7 @@ public class Check implements AbstractCheck {
             this.setbackVL = checkData.setback();
             this.alternativeName = checkData.alternativeName();
             this.experimental = checkData.experimental();
+            this.description = checkData.description();
         }
 
         reload();
@@ -111,6 +118,10 @@ public class Check implements AbstractCheck {
             return player.getSetbackTeleportUtil().executeViolationSetback();
         }
         return false;
+    }
+
+    public boolean isAboveSetbackVl() {
+        return getViolations() > setbackVL;
     }
 
     public String formatOffset(double offset) {

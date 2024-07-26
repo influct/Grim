@@ -1,3 +1,5 @@
+# Вы также можете использовать шестнадцатеричные коды, в формате #FFFFFF или #ffffff.
+
 # \u00BB это " (двойной >>), ANSI и UTF-8 интерпретируют это по-разному... вы можете даже увидеть "?" из-за этого
 prefix: "&bGrim &8\u00BB"
 
@@ -19,10 +21,13 @@ upload-log-upload-failure: "%prefix% &cЧто-то пошло не так при
 # %prefix%
 # %player%
 # %check_name%
+# %description%
+# %experimental%
 # %vl% - нарушения
 # %verbose% - дополнительная информация от проверки, например, смещения, не все проверки добавляют информацию.
-alerts-format: "%prefix% &f%player% &bпровалил &f%check_name% &f(x&c%vl%&f) &7%verbose%"
-alerts-format-proxy: "%prefix% &f[&cproxy&f] &f%player% &bпровалил &f%check_name% &f(x&c%vl%&f) &7%verbose%"
+alerts-format: "%prefix% &f%player% &bпровалил &f%check_name%%experimental% &f(x&c%vl%&f) &7%verbose%"
+alerts-format-proxy: "%prefix% &f[&cproxy&f] &f%player% &bпровалил &f%check_name%%experimental% &f(x&c%vl%&f) &7%verbose%"
+experimental-symbol: "*"
 
 profile:
   - "&7======================"
@@ -43,6 +48,6 @@ help:
   - "/grim perf &f- &7Вывод производительности Grim для разработчиков"
   - "/grim reload &f- &7Перезагружает конфигурацию"
   - "/grim spectate <игрок> &f- &7Наблюдать за игроком"
-  - "/grim verbose &f- &fПоказывает все флаги без буферов"
+  - "/grim verbose &f- &7Показывает все флаги без буферов"
   - "/grim log [0-255] &f- &7Загружает журнал отладки для флагов предсказания"
   - "&7======================"

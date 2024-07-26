@@ -1,6 +1,6 @@
 # Основная конфигурация GrimAC
 # Исходный код: https://github.com/MWHunter/Grim
-# Авторское право 2022 DefineOutside и соавторы, лицензия GPLv3.
+# Авторское право 2024 DefineOutside и соавторы, лицензия GPLv3.
 # Модифицированные двоичные файлы, или плагины со скопированным исходным кодом, должны быть приватными,
 # или с полным исходным кодом, доступным покупателям без дополнительной платы.
 
@@ -35,6 +35,14 @@ spectators:
 
 # Сколько времени должно быть у игроков, пока мы не выкинем их за тайм-аут? По умолчанию = 60 секунд
 max-transaction-time: 60
+
+# Should the duplicate movement packet be cancelled?
+# Mojang has fixed this issue in 1.21. This was their attempt to fix the "bucket desync". https://bugs.mojang.com/browse/MC-12363
+# This setting only applies to 1.17-1.20.5 clients on 1.8 servers.
+cancel-duplicate-packet: true
+
+# Whether or not to ignore the rotation in duplicate packets
+ignore-duplicate-packet-rotation: false
 
 Simulation:
   # На сколько мы должны умножить общее преимущество, когда игрок легален.
@@ -164,5 +172,14 @@ experimental-checks: false
 # Грим иногда отменяет незаконные пакеты, например, с таймером, после X пакетов в секунду отмененных, когда следует
 # нам просто кикнуть игрока? Это необходимо, так как некоторые ограничители пакетов не учитывают пакеты, отмененные Гримом.
 packet-spam-threshold: 100
+
+# Грим может обеспечить, что игрок, выведенный из состояния полёта, не может иметь пинг более X миллисекунд.
+# Это связано с тем, что Грим в настоящее время не проверяет летающих игроков.
+# To disable, use -1
+max-ping-out-of-flying: 1000
+
+# Maximum ping when a firework boost is removed from the player.
+# This prevents high latency players from being able to use 1 firework boost with an elytra forever.
+max-ping-firework-boost: 1000
 
 config-version: 9

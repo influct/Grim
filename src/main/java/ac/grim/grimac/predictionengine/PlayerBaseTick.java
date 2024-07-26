@@ -1,13 +1,16 @@
 package ac.grim.grimac.predictionengine;
 
+import ac.grim.grimac.checks.impl.movement.NoSlowC;
 import ac.grim.grimac.player.GrimPlayer;
 import ac.grim.grimac.utils.collisions.datatypes.SimpleCollisionBox;
+import ac.grim.grimac.utils.data.packetentity.PacketEntity;
 import ac.grim.grimac.utils.enums.FluidTag;
 import ac.grim.grimac.utils.enums.Pose;
 import ac.grim.grimac.utils.latency.CompensatedEntities;
 import ac.grim.grimac.utils.math.GrimMath;
 import ac.grim.grimac.utils.nmsutil.*;
-import com.github.retrooper.packetevents.protocol.entity.type.EntityTypes;
+import com.github.retrooper.packetevents.PacketEvents;
+import com.github.retrooper.packetevents.manager.server.ServerVersion;
 import com.github.retrooper.packetevents.protocol.player.ClientVersion;
 import com.github.retrooper.packetevents.protocol.world.BlockFace;
 import com.github.retrooper.packetevents.protocol.world.states.type.StateType;
@@ -24,12 +27,14 @@ public class PlayerBaseTick {
     }
 
     public static boolean canEnterPose(GrimPlayer player, Pose pose, double x, double y, double z) {
-        return Collisions.isEmpty(player, getBoundingBoxForPose(pose, x, y, z).expand(-1.0E-7D));
+        return Collisions.isEmpty(player, getBoundingBoxForPose(player, pose, x, y, z).expand(-1.0E-7D));
     }
 
-    protected static SimpleCollisionBox getBoundingBoxForPose(Pose pose, double x, double y, double z) {
-        float radius = pose.width / 2.0F;
-        return new SimpleCollisionBox(x - radius, y, z - radius, x + radius, y + pose.height, z + radius, false);
+    protected static SimpleCollisionBox getBoundingBoxForPose(GrimPlayer player, Pose pose, double x, double y, double z) {
+        final float width = pose.width * player.compensatedEntities.getSelf().scale;
+        final float height = pose.height * player.compensatedEntities.getSelf().scale;
+        float radius = width / 2.0F;
+        return new SimpleCollisionBox(x - radius, y, z - radius, x + radius, y + height, z + radius, false);
     }
 
     public void doBaseTick() {
@@ -59,6 +64,8 @@ public class PlayerBaseTick {
             player.trackBaseTickAddition(waterPushVector);
         }
 
+        final boolean wasSlowMovement = player.isSlowMovement;
+
         if (player.getClientVersion().isOlderThanOrEquals(ClientVersion.V_1_13_2)) {
             // 1.13.2 and below logic: If crouching, then slow movement, simple!
             player.isSlowMovement = player.isSneaking;
@@ -78,6 +85,8 @@ public class PlayerBaseTick {
         }
 
         if (player.compensatedEntities.getSelf().inVehicle()) player.isSlowMovement = false;
+
+        if (wasSlowMovement != player.isSlowMovement) player.checkManager.getPostPredictionCheck(NoSlowC.class).startedSprintingBeforeSlowMovement = player.isSlowMovement && player.isSprinting;
 
         // Players in boats don't care about being in blocks
         if (!player.compensatedEntities.getSelf().inVehicle()) {
@@ -100,7 +109,8 @@ public class PlayerBaseTick {
 
         double d0 = player.lastY + player.getEyeHeight() - 0.1111111119389534D;
 
-        if (player.compensatedEntities.getSelf().getRiding() != null && EntityTypes.isTypeInstanceOf(player.compensatedEntities.getSelf().getRiding().type, EntityTypes.BOAT) && !player.vehicleData.boatUnderwater && player.boundingBox.maxY >= d0 && player.boundingBox.minY <= d0) {
+        final PacketEntity riding = player.compensatedEntities.getSelf().getRiding();
+        if (riding != null && riding.isBoat() && !player.vehicleData.boatUnderwater && player.boundingBox.maxY >= d0 && player.boundingBox.minY <= d0) {
             return;
         }
 
@@ -139,7 +149,7 @@ public class PlayerBaseTick {
         if (player.getClientVersion().isOlderThanOrEquals(ClientVersion.V_1_16_4)) return;
 
         // The client first desync's this attribute
-        player.compensatedEntities.getSelf().playerSpeed.getModifiers().removeIf(modifier -> modifier.getUUID().equals(CompensatedEntities.SNOW_MODIFIER_UUID));
+        player.compensatedEntities.getSelf().playerSpeed.getModifiers().removeIf(modifier -> modifier.getUUID().equals(CompensatedEntities.SNOW_MODIFIER_UUID) || modifier.getName().getKey().equals("powder_snow"));
 
         // And then re-adds it using purely what the server has sent it
         StateType type = BlockProperties.getOnPos(player, player.mainSupportingBlockData, new Vector3d(player.x, player.y, player.z));
@@ -188,7 +198,7 @@ public class PlayerBaseTick {
             }
 
             player.pose = pose;
-            player.boundingBox = getBoundingBoxForPose(player.pose, player.x, player.y, player.z);
+            player.boundingBox = getBoundingBoxForPose(player, player.pose, player.x, player.y, player.z);
         }
     }
 
@@ -377,7 +387,8 @@ public class PlayerBaseTick {
     }
 
     public void updateInWaterStateAndDoWaterCurrentPushing() {
-        player.wasTouchingWater = this.updateFluidHeightAndDoFluidPushing(FluidTag.WATER, 0.014) && !(player.compensatedEntities.getSelf().getRiding() != null && EntityTypes.isTypeInstanceOf(player.compensatedEntities.getSelf().getRiding().type, EntityTypes.BOAT));
+        final PacketEntity riding = player.compensatedEntities.getSelf().getRiding();
+        player.wasTouchingWater = this.updateFluidHeightAndDoFluidPushing(FluidTag.WATER, 0.014) && !(riding != null && riding.isBoat());
         if (player.wasTouchingWater)
             player.fallDistance = 0;
     }

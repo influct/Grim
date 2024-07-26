@@ -1,5 +1,6 @@
 package ac.grim.grimac.events.packets;
 
+import ac.grim.grimac.GrimAPI;
 import ac.grim.grimac.checks.Check;
 import ac.grim.grimac.checks.type.PacketCheck;
 import ac.grim.grimac.player.GrimPlayer;
@@ -47,6 +48,9 @@ public class PacketEntityReplication extends Check implements PacketCheck {
     // Another valid solution is to simply spam more transactions, but let's not waste bandwidth.
     private final List<Integer> despawnedEntitiesThisTransaction = new ArrayList<>();
 
+    // Maximum ping when a firework boost is removed from the player.
+    private final int maxFireworkBoostPing = GrimAPI.INSTANCE.getConfigManager().getConfig().getIntElse("max-ping-firework-boost", 1000);
+
     public PacketEntityReplication(GrimPlayer player) {
         super(player);
     }
@@ -75,7 +79,8 @@ public class PacketEntityReplication extends Check implements PacketCheck {
 
     @Override
     public void onPacketSend(PacketSendEvent event) {
-        if (event.getPacketType() == PacketType.Play.Server.PING || event.getPacketType() == PacketType.Play.Server.WINDOW_CONFIRMATION) {
+        // ensure grim is the one that sent the transaction
+        if ((event.getPacketType() == PacketType.Play.Server.PING || event.getPacketType() == PacketType.Play.Server.WINDOW_CONFIRMATION) && player.packetStateData.lastServerTransWasValid) {
             despawnedEntitiesThisTransaction.clear();
         }
         if (event.getPacketType() == PacketType.Play.Server.SPAWN_LIVING_ENTITY) {
@@ -136,8 +141,7 @@ public class PacketEntityReplication extends Check implements PacketCheck {
                 return;
             }
 
-            if (isDirectlyAffectingPlayer(player, effect.getEntityId()))
-                event.getTasksAfterSend().add(player::sendTransaction);
+            if (isDirectlyAffectingPlayer(player, effect.getEntityId())) player.sendTransaction();
 
             player.latencyUtils.addRealTimeTask(player.lastTransactionSent.get(), () -> {
                 PacketEntity entity = player.compensatedEntities.getEntity(effect.getEntityId());
@@ -150,8 +154,7 @@ public class PacketEntityReplication extends Check implements PacketCheck {
         if (event.getPacketType() == PacketType.Play.Server.REMOVE_ENTITY_EFFECT) {
             WrapperPlayServerRemoveEntityEffect effect = new WrapperPlayServerRemoveEntityEffect(event);
 
-            if (isDirectlyAffectingPlayer(player, effect.getEntityId()))
-                event.getTasksAfterSend().add(player::sendTransaction);
+            if (isDirectlyAffectingPlayer(player, effect.getEntityId())) player.sendTransaction();
 
             player.latencyUtils.addRealTimeTask(player.lastTransactionSent.get(), () -> {
                 PacketEntity entity = player.compensatedEntities.getEntity(effect.getEntityId());
@@ -187,8 +190,8 @@ public class PacketEntityReplication extends Check implements PacketCheck {
             if (status.getStatus() == 9) {
                 if (status.getEntityId() != player.entityID) return;
 
-                player.latencyUtils.addRealTimeTask(player.lastTransactionSent.get(), () -> player.packetStateData.slowedByUsingItem = false);
-                player.latencyUtils.addRealTimeTask(player.lastTransactionSent.get() + 1, () -> player.packetStateData.slowedByUsingItem = false);
+                player.latencyUtils.addRealTimeTask(player.lastTransactionSent.get(), () -> player.packetStateData.setSlowedByUsingItem(false));
+                player.latencyUtils.addRealTimeTask(player.lastTransactionSent.get() + 1, () -> player.packetStateData.setSlowedByUsingItem(false));
             }
 
             if (status.getStatus() == 31) {
@@ -214,13 +217,13 @@ public class PacketEntityReplication extends Check implements PacketCheck {
             if (slot.getWindowId() == 0) {
                 player.latencyUtils.addRealTimeTask(player.lastTransactionSent.get(), () -> {
                     if (slot.getSlot() - 36 == player.packetStateData.lastSlotSelected) {
-                        player.packetStateData.slowedByUsingItem = false;
+                        player.packetStateData.setSlowedByUsingItem(false);
                     }
                 });
 
                 player.latencyUtils.addRealTimeTask(player.lastTransactionSent.get() + 1, () -> {
                     if (slot.getSlot() - 36 == player.packetStateData.lastSlotSelected) {
-                        player.packetStateData.slowedByUsingItem = false;
+                        player.packetStateData.setSlowedByUsingItem(false);
                     }
                 });
             }
@@ -230,19 +233,19 @@ public class PacketEntityReplication extends Check implements PacketCheck {
             WrapperPlayServerWindowItems items = new WrapperPlayServerWindowItems(event);
 
             if (items.getWindowId() == 0) { // Player inventory
-                player.latencyUtils.addRealTimeTask(player.lastTransactionSent.get(), () -> player.packetStateData.slowedByUsingItem = false);
-                player.latencyUtils.addRealTimeTask(player.lastTransactionSent.get() + 1, () -> player.packetStateData.slowedByUsingItem = false);
+                player.latencyUtils.addRealTimeTask(player.lastTransactionSent.get(), () -> player.packetStateData.setSlowedByUsingItem(false));
+                player.latencyUtils.addRealTimeTask(player.lastTransactionSent.get() + 1, () -> player.packetStateData.setSlowedByUsingItem(false));
             }
         }
 
         // 1.8 clients fail to send the RELEASE_USE_ITEM packet when a window is opened client sided while using an item
         if (event.getPacketType() == PacketType.Play.Server.OPEN_WINDOW) {
-            player.latencyUtils.addRealTimeTask(player.lastTransactionSent.get(), () -> player.packetStateData.slowedByUsingItem = false);
-            player.latencyUtils.addRealTimeTask(player.lastTransactionSent.get() + 1, () -> player.packetStateData.slowedByUsingItem = false);
+            player.latencyUtils.addRealTimeTask(player.lastTransactionSent.get(), () -> player.packetStateData.setSlowedByUsingItem(false));
+            player.latencyUtils.addRealTimeTask(player.lastTransactionSent.get() + 1, () -> player.packetStateData.setSlowedByUsingItem(false));
         }
         if (event.getPacketType() == PacketType.Play.Server.OPEN_HORSE_WINDOW) {
-            player.latencyUtils.addRealTimeTask(player.lastTransactionSent.get(), () -> player.packetStateData.slowedByUsingItem = false);
-            player.latencyUtils.addRealTimeTask(player.lastTransactionSent.get() + 1, () -> player.packetStateData.slowedByUsingItem = false);
+            player.latencyUtils.addRealTimeTask(player.lastTransactionSent.get(), () -> player.packetStateData.setSlowedByUsingItem(false));
+            player.latencyUtils.addRealTimeTask(player.lastTransactionSent.get() + 1, () -> player.packetStateData.setSlowedByUsingItem(false));
         }
 
         if (event.getPacketType() == PacketType.Play.Server.SET_PASSENGERS) {
@@ -299,12 +302,26 @@ public class PacketEntityReplication extends Check implements PacketCheck {
                 }
             }
 
-            player.latencyUtils.addRealTimeTask(player.lastTransactionSent.get() + 1, () -> {
+            final int destroyTransaction = player.lastTransactionSent.get() + 1;
+            player.latencyUtils.addRealTimeTask(destroyTransaction, () -> {
                 for (int integer : destroyEntityIds) {
                     player.compensatedEntities.removeEntity(integer);
                     player.compensatedFireworks.removeFirework(integer);
                 }
             });
+
+            // Don't let the player freeze transactions to keep the firework boost velocity + uncertainty
+            // Also generally prevents people with high ping gaining too high an advantage in firework use
+            player.runNettyTaskInMs(() -> {
+                if (player.lastTransactionReceived.get() >= destroyTransaction) return;
+                for (int entityID : destroyEntityIds) {
+                    // If the player has a firework boosting them, setback
+                    if (player.compensatedFireworks.hasFirework(entityID)) {
+                        player.getSetbackTeleportUtil().executeViolationSetback();
+                        break;
+                    }
+                }
+            }, maxFireworkBoostPing);
         }
     }
 
@@ -407,7 +424,7 @@ public class PacketEntityReplication extends Check implements PacketCheck {
             if (entity instanceof PacketEntityTrackXRot && yaw != null) {
                 PacketEntityTrackXRot xRotEntity = (PacketEntityTrackXRot) entity;
                 xRotEntity.packetYaw = yaw;
-                xRotEntity.steps = EntityTypes.isTypeInstanceOf(entity.type, EntityTypes.BOAT) ? 10 : 3;
+                xRotEntity.steps = entity.isBoat() ? 10 : 3;
             }
             entity.onFirstTransaction(isRelative, hasPos, deltaX, deltaY, deltaZ, player);
         });
