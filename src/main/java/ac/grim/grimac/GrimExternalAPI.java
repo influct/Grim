@@ -88,7 +88,6 @@ public class GrimExternalAPI implements GrimAbstractAPI, Initable {
                 grimPlayer.onReload();
                 grimPlayer.updatePermissions();
                 grimPlayer.punishmentManager.reload();
-                grimPlayer.checkManager.disableChecksOutsideOfWhitelist();
                 for (AbstractCheck value : grimPlayer.checkManager.allChecks.values()) {
                     value.reload();
                 }

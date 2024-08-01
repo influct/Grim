@@ -233,8 +233,6 @@ public class GrimPlayer implements GrimUser {
         packetStateData = new PacketStateData();
 
         uncertaintyHandler.collidingEntities.add(0);
-
-        checkManager.disableChecksOutsideOfWhitelist();
     }
 
     public Set<VectorData> getPossibleVelocities() {

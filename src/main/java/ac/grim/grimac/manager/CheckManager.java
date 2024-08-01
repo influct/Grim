@@ -316,14 +316,4 @@ public class CheckManager {
     public <T extends PostPredictionCheck> T getPostPredictionCheck(Class<T> check) {
         return (T) postPredictionCheck.get(check);
     }
-
-    public void disableChecksOutsideOfWhitelist() {
-        List<String> checksWhitelist = GrimAPI.INSTANCE.getConfigManager().getConfig().getStringList("checks-whitelist");
-
-        allChecks.values().forEach(check -> {
-            if (!checksWhitelist.contains(check.getCheckName()) && !checksWhitelist.contains(check.getConfigName())) {
-                check.setEnabled(false);
-            }
-        });
-    }
 }
