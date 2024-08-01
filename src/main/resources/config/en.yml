@@ -19,6 +19,9 @@ disabled-world-checks:
   mines:
     - ""
 
+checks-whitelist:
+  - BadPacketsA
+
 verbose:
   print-to-console: false
 

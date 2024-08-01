@@ -139,6 +139,5 @@ public class Check implements AbstractCheck {
         return packetType == PacketType.Play.Client.PONG ||
                 packetType == PacketType.Play.Client.WINDOW_CONFIRMATION;
     }
-
 }
 

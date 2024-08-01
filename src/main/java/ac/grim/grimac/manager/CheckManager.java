@@ -1,6 +1,7 @@
 package ac.grim.grimac.manager;
 
 
+import ac.grim.grimac.GrimAPI;
 import ac.grim.grimac.api.AbstractCheck;
 import ac.grim.grimac.checks.impl.aim.AimDuplicateLook;
 import ac.grim.grimac.checks.impl.aim.AimModulo360;
@@ -42,6 +43,8 @@ import com.github.retrooper.packetevents.event.PacketReceiveEvent;
 import com.github.retrooper.packetevents.event.PacketSendEvent;
 import com.google.common.collect.ClassToInstanceMap;
 import com.google.common.collect.ImmutableClassToInstanceMap;
+
+import java.util.List;
 
 public class CheckManager {
     ClassToInstanceMap<PacketCheck> packetChecks;
@@ -312,5 +315,15 @@ public class CheckManager {
     @SuppressWarnings("unchecked")
     public <T extends PostPredictionCheck> T getPostPredictionCheck(Class<T> check) {
         return (T) postPredictionCheck.get(check);
+    }
+
+    public void disableChecksOutsideOfWhitelist() {
+        List<String> checksWhitelist = GrimAPI.INSTANCE.getConfigManager().getConfig().getStringList("checks-whitelist");
+
+        allChecks.values().forEach(check -> {
+            if (!checksWhitelist.contains(check.getCheckName()) && !checksWhitelist.contains(check.getConfigName())) {
+                check.setEnabled(false);
+            }
+        });
     }
 }
