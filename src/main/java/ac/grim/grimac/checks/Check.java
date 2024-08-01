@@ -40,7 +40,7 @@ public class Check implements AbstractCheck {
 
     @Unmodifiable
     @Getter(AccessLevel.NONE)
-    private Set<String> enabledWorlds;
+    private Set<String> disabledWorlds;
 
     @Override
     public boolean isExperimental() {
@@ -124,12 +124,12 @@ public class Check implements AbstractCheck {
 
         if (!enabledWorldChecks.isPresent()) {
             GrimAPI.INSTANCE.getPlugin().getLogger().severe("'enabled-world-checks' not found in config!");
-            enabledWorlds = Collections.emptySet();
+            disabledWorlds = Collections.emptySet();
             return;
         }
 
-        enabledWorlds = enabledWorldChecks.get().entrySet().stream()
-                .filter(entry -> entry.getValue().contains(getCheckName()) || entry.getValue().contains(getConfigName()))
+        disabledWorlds = enabledWorldChecks.get().entrySet().stream()
+                .filter(entry -> !entry.getValue().contains(getCheckName()) && !entry.getValue().contains(getConfigName()))
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toSet());
     }
@@ -163,7 +163,7 @@ public class Check implements AbstractCheck {
     }
 
     public boolean isEnabled() {
-        return enabledWorlds.contains(player.worldName()) && this.isEnabled;
+        return !disabledWorlds.contains(player.worldName()) && this.isEnabled;
     }
 }
 
