@@ -125,13 +125,17 @@ public class Check implements AbstractCheck {
         if (!enabledWorldChecks.isPresent()) {
             GrimAPI.INSTANCE.getPlugin().getLogger().severe("'enabled-world-checks' not found in config!");
             disabledWorlds = Collections.emptySet();
-            return;
-        }
+        } else {
+            disabledWorlds = enabledWorldChecks.get().entrySet().stream()
+                    .filter(entry -> !entry.getValue().contains(getCheckName()) && !entry.getValue().contains(getConfigName()))
+                    .map(Map.Entry::getKey)
+                    .collect(Collectors.toSet());
 
-        disabledWorlds = enabledWorldChecks.get().entrySet().stream()
-                .filter(entry -> !entry.getValue().contains(getCheckName()) && !entry.getValue().contains(getConfigName()))
-                .map(Map.Entry::getKey)
-                .collect(Collectors.toSet());
+            for (int i = 0; i < 10; i++) {
+                System.err.println("aa " + disabledWorlds);
+                System.err.println("bb " + enabledWorldChecks.get());
+            }
+        }
     }
 
     public boolean alert(String verbose) {
@@ -162,7 +166,7 @@ public class Check implements AbstractCheck {
                 packetType == PacketType.Play.Client.WINDOW_CONFIRMATION;
     }
 
-    public boolean isEnabled() {
+    public final boolean isEnabled() {
         return !disabledWorlds.contains(player.worldName()) && this.isEnabled;
     }
 }
