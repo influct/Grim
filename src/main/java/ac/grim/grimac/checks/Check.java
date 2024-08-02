@@ -1,6 +1,5 @@
 package ac.grim.grimac.checks;
 
-import ac.grim.grimac.GrimAC;
 import ac.grim.grimac.GrimAPI;
 import ac.grim.grimac.api.AbstractCheck;
 import ac.grim.grimac.api.events.FlagEvent;
@@ -8,15 +7,11 @@ import ac.grim.grimac.player.GrimPlayer;
 import com.github.retrooper.packetevents.protocol.packettype.PacketType;
 import com.github.retrooper.packetevents.protocol.packettype.PacketTypeCommon;
 import github.scarsz.configuralize.DynamicConfig;
-
-import java.util.*;
-import java.util.stream.Collectors;
-
-import lombok.AccessLevel;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
 import org.bukkit.Bukkit;
-import org.jetbrains.annotations.Unmodifiable;
 
 // Class from https://github.com/Tecnio/AntiCheatBase/blob/master/src/main/java/me/tecnio/anticheat/check/Check.java
 @Getter
@@ -33,14 +28,8 @@ public class Check implements AbstractCheck {
     private String description;
 
     private boolean experimental;
-
     @Setter
-    @Getter(AccessLevel.NONE)
     private boolean isEnabled;
-
-    @Unmodifiable
-    @Getter(AccessLevel.NONE)
-    private Set<String> disabledWorlds;
 
     @Override
     public boolean isExperimental() {
@@ -69,6 +58,11 @@ public class Check implements AbstractCheck {
     }
 
     public boolean shouldModifyPackets() {
+        if(GrimAPI.INSTANCE.getConfigManager().getConfig().getStringListElse("disabled-world-checks."+player.worldName(),
+                new ArrayList<>())
+            .contains(checkName)) {
+            return false;
+        }
         return isEnabled && !player.disableGrim && !player.noModifyPacketPermission;
     }
 
@@ -116,22 +110,6 @@ public class Check implements AbstractCheck {
         setbackVL = getConfig().getDoubleElse(configName + ".setbackvl", setbackVL);
 
         if (setbackVL == -1) setbackVL = Double.MAX_VALUE;
-
-        final Optional<Map<String, List<String>>> enabledWorldChecks = GrimAPI
-                .INSTANCE.getConfigManager()
-                .getConfig()
-                .getOptionalMap("enabled-world-checks");
-
-        if (!enabledWorldChecks.isPresent()) {
-            GrimAPI.INSTANCE.getPlugin().getLogger().severe("'enabled-world-checks' not found in config!");
-            disabledWorlds = Collections.emptySet();
-            return;
-        }
-
-        disabledWorlds = enabledWorldChecks.get().entrySet().stream()
-                .filter(entry -> !entry.getValue().contains(getCheckName()) && !entry.getValue().contains(getConfigName()))
-                .map(Map.Entry::getKey)
-                .collect(Collectors.toSet());
     }
 
     public boolean alert(String verbose) {
@@ -162,8 +140,5 @@ public class Check implements AbstractCheck {
                 packetType == PacketType.Play.Client.WINDOW_CONFIRMATION;
     }
 
-    public boolean isEnabled() {
-        return !disabledWorlds.contains(player.worldName()) && this.isEnabled;
-    }
 }
 
