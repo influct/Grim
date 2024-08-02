@@ -130,11 +130,6 @@ public class Check implements AbstractCheck {
                     .filter(entry -> !entry.getValue().contains(getCheckName()) && !entry.getValue().contains(getConfigName()))
                     .map(Map.Entry::getKey)
                     .collect(Collectors.toSet());
-
-            for (int i = 0; i < 10; i++) {
-                System.err.println("aa " + disabledWorlds);
-                System.err.println("bb " + enabledWorldChecks.get());
-            }
         }
     }
 
