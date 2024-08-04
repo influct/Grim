@@ -195,43 +195,69 @@ public class CheckManager {
     }
 
     public void onPrePredictionReceivePacket(final PacketReceiveEvent packet) {
-        forEachEnabledCheck(prePredictionChecks.values(), check -> check.onPacketReceive(packet));
+        for (PacketCheck check : prePredictionChecks.values()) {
+            check.onPacketReceive(packet);
+        }
     }
 
     public void onPacketReceive(final PacketReceiveEvent packet) {
-        forEachEnabledCheck(packetChecks.values(), check -> check.onPacketReceive(packet));
-        forEachEnabledCheck(postPredictionCheck.values(), check -> check.onPacketReceive(packet));
+        for (PacketCheck check : packetChecks.values()) {
+            check.onPacketReceive(packet);
+        }
+        for (PostPredictionCheck check : postPredictionCheck.values()) {
+            check.onPacketReceive(packet);
+        }
     }
 
     public void onPacketSend(final PacketSendEvent packet) {
-        forEachEnabledCheck(packetChecks.values(), check -> check.onPacketSend(packet));
-        forEachEnabledCheck(prePredictionChecks.values(), check -> check.onPacketSend(packet));
-        forEachEnabledCheck(postPredictionCheck.values(), check -> check.onPacketSend(packet));
+        for (PacketCheck check : prePredictionChecks.values()) {
+            check.onPacketSend(packet);
+        }
+        for (PacketCheck check : packetChecks.values()) {
+            check.onPacketSend(packet);
+        }
+        for (PostPredictionCheck check : postPredictionCheck.values()) {
+            check.onPacketSend(packet);
+        }
     }
 
     public void onPositionUpdate(final PositionUpdate position) {
-        forEachEnabledCheck(positionCheck.values(), check -> check.onPositionUpdate(position));
+        for (PositionCheck check : positionCheck.values()) {
+            check.onPositionUpdate(position);
+        }
     }
 
     public void onRotationUpdate(final RotationUpdate rotation) {
-        forEachEnabledCheck(rotationCheck.values(), check -> check.process(rotation));
-        forEachEnabledCheck(blockPlaceCheck.values(), check -> check.process(rotation));
+        for (RotationCheck check : rotationCheck.values()) {
+            check.process(rotation);
+        }
+        for (BlockPlaceCheck check : blockPlaceCheck.values()) {
+            check.process(rotation);
+        }
     }
 
     public void onVehiclePositionUpdate(final VehiclePositionUpdate update) {
-        forEachEnabledCheck(vehicleCheck.values(), check -> check.process(update));
+        for (VehicleCheck check : vehicleCheck.values()) {
+            check.process(update);
+        }
     }
 
     public void onPredictionFinish(final PredictionComplete complete) {
-        forEachEnabledCheck(postPredictionCheck.values(), check -> check.onPredictionComplete(complete));
+        for (PostPredictionCheck check : postPredictionCheck.values()) {
+            check.onPredictionComplete(complete);
+        }
     }
 
     public void onBlockPlace(final BlockPlace place) {
-        forEachEnabledCheck(blockPlaceCheck.values(), check -> check.onBlockPlace(place));
+        for (BlockPlaceCheck check : blockPlaceCheck.values()) {
+            check.onBlockPlace(place);
+        }
     }
 
     public void onPostFlyingBlockPlace(final BlockPlace place) {
-        forEachEnabledCheck(blockPlaceCheck.values(), check -> check.onPostFlyingBlockPlace(place));
+        for (BlockPlaceCheck check : blockPlaceCheck.values()) {
+            check.onPostFlyingBlockPlace(place);
+        }
     }
 
     public ExplosionHandler getExplosionHandler() {
@@ -293,15 +319,5 @@ public class CheckManager {
     @SuppressWarnings("unchecked")
     public <T extends PostPredictionCheck> T getPostPredictionCheck(Class<T> check) {
         return (T) postPredictionCheck.get(check);
-    }
-
-    private<T extends AbstractCheck> void forEachEnabledCheck(Collection<T> checks, Consumer<T> action) {
-        for (T check : checks) {
-            if (check instanceof Check) {
-                if (!((Check) check).isEnabled()) continue;
-            }
-
-            action.accept(check);
-        }
     }
 }
