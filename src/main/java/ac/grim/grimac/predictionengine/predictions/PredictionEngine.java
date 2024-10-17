@@ -11,6 +11,7 @@ import ac.grim.grimac.utils.nmsutil.Collisions;
 import ac.grim.grimac.utils.nmsutil.GetBoundingBox;
 import ac.grim.grimac.utils.nmsutil.JumpPower;
 import ac.grim.grimac.utils.nmsutil.Riptide;
+import com.github.retrooper.packetevents.protocol.attribute.Attributes;
 import com.github.retrooper.packetevents.protocol.entity.type.EntityTypes;
 import com.github.retrooper.packetevents.protocol.player.ClientVersion;
 import org.bukkit.util.Vector;
@@ -516,6 +517,7 @@ public class PredictionEngine {
         //
         // Be somewhat careful as there is an antikb (for horizontal) that relies on this lenience
         Vector uncertainty = new Vector(avgColliding * 0.08, additionVertical, avgColliding * 0.08);
+
         Vector min = new Vector(player.uncertaintyHandler.xNegativeUncertainty - additionHorizontal, -bonusY + player.uncertaintyHandler.yNegativeUncertainty, player.uncertaintyHandler.zNegativeUncertainty - additionHorizontal);
         Vector max = new Vector(player.uncertaintyHandler.xPositiveUncertainty + additionHorizontal, bonusY + player.uncertaintyHandler.yPositiveUncertainty, player.uncertaintyHandler.zPositiveUncertainty + additionHorizontal);
 
@@ -547,7 +549,7 @@ public class PredictionEngine {
         // We can't simulate the player's Y velocity, unknown number of ticks with a gravity change
         // Feel free to simulate all 104857600000000000000000000 possibilities!
         if (!player.pointThreeEstimator.canPredictNextVerticalMovement()) {
-            minVector.setY(minVector.getY() - player.compensatedEntities.getSelf().gravityAttribute);
+            minVector.setY(minVector.getY() - player.compensatedEntities.getSelf().getAttributeValue(Attributes.GENERIC_GRAVITY));
         }
 
         // Hidden slime block bounces by missing idle tick and 0.03

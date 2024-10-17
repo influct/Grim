@@ -12,19 +12,19 @@ import org.bukkit.plugin.java.JavaPlugin;
 public enum GrimAPI {
     INSTANCE;
 
-    private final AlertManager alertManager = new AlertManager();
+    private final AlertManagerImpl alertManager = new AlertManagerImpl();
     private final SpectateManager spectateManager = new SpectateManager();
     private final DiscordManager discordManager = new DiscordManager();
     private final PlayerDataManager playerDataManager = new PlayerDataManager();
     private final TickManager tickManager = new TickManager();
     private final GrimExternalAPI externalAPI = new GrimExternalAPI(this);
     private InitManager initManager;
-    private ConfigManager configManager;
+    private ConfigManagerImpl configManager;
     private JavaPlugin plugin;
 
     public void load(final JavaPlugin plugin) {
         this.plugin = plugin;
-        this.configManager = new ConfigManager();
+        this.configManager = new ConfigManagerImpl();
         initManager = new InitManager();
         initManager.load();
     }

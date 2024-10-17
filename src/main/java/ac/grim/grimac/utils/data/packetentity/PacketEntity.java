@@ -19,21 +19,33 @@ import ac.grim.grimac.player.GrimPlayer;
 import ac.grim.grimac.utils.collisions.datatypes.SimpleCollisionBox;
 import ac.grim.grimac.utils.data.ReachInterpolationData;
 import ac.grim.grimac.utils.data.TrackedPosition;
+import ac.grim.grimac.utils.data.attribute.ValuedAttribute;
 import ac.grim.grimac.utils.nmsutil.GetBoundingBox;
+import com.github.retrooper.packetevents.protocol.attribute.Attribute;
+import com.github.retrooper.packetevents.protocol.attribute.Attributes;
 import com.github.retrooper.packetevents.protocol.entity.type.EntityType;
 import com.github.retrooper.packetevents.protocol.player.ClientVersion;
 import com.github.retrooper.packetevents.protocol.potion.PotionType;
 import com.github.retrooper.packetevents.util.Vector3d;
+import lombok.Getter;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.OptionalInt;
+import java.util.UUID;
+import java.util.Map;
+import java.util.Optional;
 
 // You may not copy this check unless your anticheat is licensed under GPL
 public class PacketEntity extends TypedPacketEntity {
-    
+
     public final TrackedPosition trackedServerPosition;
 
+    // TODO in what cases is UUID null in 1.9+?
+    @Getter
+    private final UUID uuid; // NULL ON VERSIONS BELOW 1.9 (or for some entities, apparently??)
     public PacketEntity riding;
     public List<PacketEntity> passengers = new ArrayList<>(0);
     public boolean isDead = false;
@@ -42,18 +54,20 @@ public class PacketEntity extends TypedPacketEntity {
     private ReachInterpolationData oldPacketLocation;
     private ReachInterpolationData newPacketLocation;
 
-    public HashMap<PotionType, Integer> potionsMap = null;
-    public float scale = 1f; // 1.20.5+
-    public float stepHeight = 0.6f; // 1.20.5+
-    public double gravityAttribute = 0.08; // 1.20.5+
+    private Map<PotionType, Integer> potionsMap = null;
+    protected final Map<Attribute, ValuedAttribute> attributeMap = new IdentityHashMap<>();
 
-    public PacketEntity(EntityType type) {
+    public PacketEntity(GrimPlayer player, EntityType type) {
         super(type);
+        this.uuid = null;
+        initAttributes(player);
         this.trackedServerPosition = new TrackedPosition();
     }
 
-    public PacketEntity(GrimPlayer player, EntityType type, double x, double y, double z) {
+    public PacketEntity(GrimPlayer player, UUID uuid, EntityType type, double x, double y, double z) {
         super(type);
+        this.uuid = uuid;
+        initAttributes(player);
         this.trackedServerPosition = new TrackedPosition();
         this.trackedServerPosition.setPos(new Vector3d(x, y, z));
         if (player.getClientVersion().isOlderThan(ClientVersion.V_1_9)) { // Thanks ViaVersion
@@ -61,6 +75,47 @@ public class PacketEntity extends TypedPacketEntity {
         }
         final Vector3d pos = trackedServerPosition.getPos();
         this.newPacketLocation = new ReachInterpolationData(player, GetBoundingBox.getPacketEntityBoundingBox(player, pos.x, pos.y, pos.z, this), trackedServerPosition, this);
+    }
+
+    protected void trackAttribute(ValuedAttribute valuedAttribute) {
+        if (attributeMap.containsKey(valuedAttribute.attribute())) {
+            throw new IllegalArgumentException("Attribute already exists on entity!");
+        }
+        attributeMap.put(valuedAttribute.attribute(), valuedAttribute);
+    }
+
+    protected void initAttributes(GrimPlayer player) {
+        trackAttribute(ValuedAttribute.ranged(Attributes.GENERIC_SCALE, 1.0, 0.0625, 16)
+                .requiredVersion(player, ClientVersion.V_1_20_5));
+        trackAttribute(ValuedAttribute.ranged(Attributes.GENERIC_STEP_HEIGHT, 0.6f, 0, 10)
+                .requiredVersion(player, ClientVersion.V_1_20_5));
+        trackAttribute(ValuedAttribute.ranged(Attributes.GENERIC_GRAVITY, 0.08, -1, 1)
+                .requiredVersion(player, ClientVersion.V_1_20_5));
+    }
+
+    public Optional<ValuedAttribute> getAttribute(Attribute attribute) {
+        if (attribute == null) return Optional.empty();
+        return Optional.ofNullable(attributeMap.get(attribute));
+    }
+
+    public void setAttribute(Attribute attribute, double value) {
+        ValuedAttribute property = attributeMap.get(attribute);
+        if (property == null) {
+            throw new IllegalArgumentException("Cannot set attribute " + attribute.getName() + " for entity " + getType().getName().toString() + "!");
+        }
+        property.override(value);
+    }
+
+    public double getAttributeValue(Attribute attribute) {
+        final ValuedAttribute property = attributeMap.get(attribute);
+        if (property == null) {
+            throw new IllegalArgumentException("Cannot get attribute " + attribute.getName() + " for entity " + getType().getName().toString() + "!");
+        }
+        return property.get();
+    }
+
+    public void resetAttributes() {
+        attributeMap.values().forEach(ValuedAttribute::reset);
     }
 
     // Set the old packet location to the new one
@@ -144,6 +199,15 @@ public class PacketEntity extends TypedPacketEntity {
 
     public PacketEntity getRiding() {
         return riding;
+    }
+
+    public OptionalInt getPotionEffectLevel(PotionType effect) {
+        final Integer amplifier = potionsMap == null ? null : potionsMap.get(effect);
+        return amplifier == null ? OptionalInt.empty() : OptionalInt.of(amplifier);
+    }
+
+    public boolean hasPotionEffect(PotionType effect) {
+        return potionsMap != null && potionsMap.containsKey(effect);
     }
 
     public void addPotionEffect(PotionType effect, int amplifier) {

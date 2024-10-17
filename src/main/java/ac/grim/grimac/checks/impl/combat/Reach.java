@@ -15,6 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package ac.grim.grimac.checks.impl.combat;
 
+import ac.grim.grimac.api.config.ConfigManager;
 import ac.grim.grimac.checks.Check;
 import ac.grim.grimac.checks.CheckData;
 import ac.grim.grimac.checks.type.PacketCheck;
@@ -24,6 +25,7 @@ import ac.grim.grimac.utils.data.packetentity.PacketEntity;
 import ac.grim.grimac.utils.data.packetentity.dragon.PacketEntityEnderDragonPart;
 import ac.grim.grimac.utils.nmsutil.ReachUtils;
 import com.github.retrooper.packetevents.event.PacketReceiveEvent;
+import com.github.retrooper.packetevents.protocol.attribute.Attributes;
 import com.github.retrooper.packetevents.protocol.entity.type.EntityType;
 import com.github.retrooper.packetevents.protocol.entity.type.EntityTypes;
 import com.github.retrooper.packetevents.protocol.packettype.PacketType;
@@ -135,7 +137,7 @@ public class Reach extends Check implements PacketCheck {
             if (reachEntity.getType() == EntityTypes.END_CRYSTAL) {
                 targetBox = new SimpleCollisionBox(reachEntity.trackedServerPosition.getPos().subtract(1, 0, 1), reachEntity.trackedServerPosition.getPos().add(1, 2, 1));
             }
-            return ReachUtils.getMinReachToBox(player, targetBox) > player.compensatedEntities.getSelf().getEntityInteractRange();
+            return ReachUtils.getMinReachToBox(player, targetBox) > player.compensatedEntities.getSelf().getAttributeValue(Attributes.PLAYER_ENTITY_INTERACTION_RANGE);
         }
     }
 
@@ -199,7 +201,7 @@ public class Reach extends Check implements PacketCheck {
         }
 
         // +3 would be 3 + 3 = 6, which is the pre-1.20.5 behaviour, preventing "Missed Hitbox"
-        final double distance = player.compensatedEntities.getSelf().getEntityInteractRange() + 3;
+        final double distance = player.compensatedEntities.getSelf().getAttributeValue(Attributes.PLAYER_ENTITY_INTERACTION_RANGE) + 3;
         for (Vector lookVec : possibleLookDirs) {
             for (double eye : player.getPossibleEyeHeights()) {
                 Vector eyePos = new Vector(from.getX(), from.getY() + eye, from.getZ());
@@ -223,7 +225,7 @@ public class Reach extends Check implements PacketCheck {
             if (minDistance == Double.MAX_VALUE) {
                 cancelBuffer = 1;
                 return "Missed hitbox";
-            } else if (minDistance > player.compensatedEntities.getSelf().getEntityInteractRange()) {
+            } else if (minDistance > player.compensatedEntities.getSelf().getAttributeValue(Attributes.PLAYER_ENTITY_INTERACTION_RANGE)) {
                 cancelBuffer = 1;
                 return String.format("%.5f", minDistance) + " blocks";
             } else {
@@ -235,9 +237,8 @@ public class Reach extends Check implements PacketCheck {
     }
 
     @Override
-    public void reload() {
-        super.reload();
-        this.cancelImpossibleHits = getConfig().getBooleanElse("Reach.block-impossible-hits", true);
-        this.threshold = getConfig().getDoubleElse("Reach.threshold", 0.0005);
+    public void onReload(ConfigManager config) {
+        this.cancelImpossibleHits = config.getBooleanElse("Reach.block-impossible-hits", true);
+        this.threshold = config.getDoubleElse("Reach.threshold", 0.0005);
     }
 }
