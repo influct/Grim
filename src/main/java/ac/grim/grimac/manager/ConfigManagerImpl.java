@@ -24,6 +24,10 @@ public class ConfigManagerImpl implements ConfigManager, BasicReloadable {
         return this;
     }
 
+    public DynamicConfig getDynamicConfig() {
+        return config;
+    }
+
     private final DynamicConfig config;
     @Getter
     private final File configFile = new File(GrimAPI.INSTANCE.getPlugin().getDataFolder(), "config.yml");

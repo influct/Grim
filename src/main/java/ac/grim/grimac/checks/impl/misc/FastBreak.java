@@ -107,34 +107,34 @@ public class FastBreak extends Check implements PacketCheck {
                 }
 
                 if (blockBreakBalance > 1000) { // If more than a second of advantage
-                    FoliaScheduler.getEntityScheduler().execute(player.bukkitPlayer, GrimAPI.INSTANCE.getPlugin(), () -> {
-                        Player bukkitPlayer = player.bukkitPlayer;
-                        if (bukkitPlayer == null || !bukkitPlayer.isOnline()) return;
-
-                        if (bukkitPlayer.getLocation().distance(new Location(bukkitPlayer.getWorld(), blockPosition.getX(), blockPosition.getY(), blockPosition.getZ())) < 64) {
-                            final int chunkX = blockPosition.getX() >> 4;
-                            final int chunkZ = blockPosition.getZ() >> 4;
-                            if (!bukkitPlayer.getWorld().isChunkLoaded(chunkX, chunkZ)) return; // Don't load chunks sync
-
-                            Chunk chunk = bukkitPlayer.getWorld().getChunkAt(chunkX, chunkZ);
-                            Block block = chunk.getBlock(blockPosition.getX() & 15, blockPosition.getY(), blockPosition.getZ() & 15);
-
-                            int blockId;
-
-                            if (PacketEvents.getAPI().getServerManager().getVersion().isNewerThanOrEquals(ServerVersion.V_1_13)) {
-                                // Cache this because strings are expensive
-                                blockId = WrappedBlockState.getByString(PacketEvents.getAPI().getServerManager().getVersion().toClientVersion(), block.getBlockData().getAsString(false)).getGlobalId();
-                            } else {
-                                blockId = (block.getType().getId() << 4) | block.getData();
-                            }
-
-                            player.user.sendPacket(new WrapperPlayServerBlockChange(blockPosition, blockId));
-
-                            if (PacketEvents.getAPI().getServerManager().getVersion().isNewerThanOrEquals(ServerVersion.V_1_19)) { // Via will handle this for us pre-1.19
-                                player.user.sendPacket(new WrapperPlayServerAcknowledgeBlockChanges(digging.getSequence())); // Make 1.19 clients apply the changes
-                            }
-                        }
-                    }, null, 0);
+//                    FoliaScheduler.getEntityScheduler().execute(player.bukkitPlayer, GrimAPI.INSTANCE.getPlugin(), () -> {
+//                        Player bukkitPlayer = player.bukkitPlayer;
+//                        if (bukkitPlayer == null || !bukkitPlayer.isOnline()) return;
+//
+//                        if (bukkitPlayer.getLocation().distance(new Location(bukkitPlayer.getWorld(), blockPosition.getX(), blockPosition.getY(), blockPosition.getZ())) < 64) {
+//                            final int chunkX = blockPosition.getX() >> 4;
+//                            final int chunkZ = blockPosition.getZ() >> 4;
+//                            if (!bukkitPlayer.getWorld().isChunkLoaded(chunkX, chunkZ)) return; // Don't load chunks sync
+//
+//                            Chunk chunk = bukkitPlayer.getWorld().getChunkAt(chunkX, chunkZ);
+//                            Block block = chunk.getBlock(blockPosition.getX() & 15, blockPosition.getY(), blockPosition.getZ() & 15);
+//
+//                            int blockId;
+//
+//                            if (PacketEvents.getAPI().getServerManager().getVersion().isNewerThanOrEquals(ServerVersion.V_1_13)) {
+//                                // Cache this because strings are expensive
+//                                blockId = WrappedBlockState.getByString(PacketEvents.getAPI().getServerManager().getVersion().toClientVersion(), block.getBlockData().getAsString(false)).getGlobalId();
+//                            } else {
+//                                blockId = (block.getType().getId() << 4) | block.getData();
+//                            }
+//
+//                            player.user.sendPacket(new WrapperPlayServerBlockChange(blockPosition, blockId));
+//
+//                            if (PacketEvents.getAPI().getServerManager().getVersion().isNewerThanOrEquals(ServerVersion.V_1_19)) { // Via will handle this for us pre-1.19
+//                                player.user.sendPacket(new WrapperPlayServerAcknowledgeBlockChanges(digging.getSequence())); // Make 1.19 clients apply the changes
+//                            }
+//                        }
+//                    }, null, 0);
 
                     if (flagAndAlert("Diff=" + diff + ",Balance=" + blockBreakBalance) && shouldModifyPackets()) {
                         event.setCancelled(true);

@@ -1,6 +1,5 @@
 package ac.grim.grimac.checks;
 
-import ac.grim.grimac.GrimAC;
 import ac.grim.grimac.GrimAPI;
 import ac.grim.grimac.api.AbstractCheck;
 import ac.grim.grimac.api.config.ConfigManager;
@@ -10,10 +9,14 @@ import ac.grim.grimac.utils.common.ConfigReloadObserver;
 import com.github.retrooper.packetevents.protocol.packettype.PacketType;
 import com.github.retrooper.packetevents.protocol.packettype.PacketTypeCommon;
 import io.github.retrooper.packetevents.util.folia.FoliaScheduler;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import org.bukkit.Bukkit;
 import org.jetbrains.annotations.Unmodifiable;
+
+import java.util.*;
+import java.util.stream.Collectors;
 
 // Class from https://github.com/Tecnio/AntiCheatBase/blob/master/src/main/java/me/tecnio/anticheat/check/Check.java
 @Getter
@@ -125,11 +128,9 @@ public class Check implements AbstractCheck, ConfigReloadObserver {
 
     @Override
     public void onReload(ConfigManager config) {
-
-
         final Optional<Map<String, List<String>>> enabledWorldChecks = GrimAPI
                 .INSTANCE.getConfigManager()
-                .getConfig()
+                .getDynamicConfig()
                 .getOptionalMap("enabled-world-checks");
 
         if (!enabledWorldChecks.isPresent()) {
@@ -146,10 +147,6 @@ public class Check implements AbstractCheck, ConfigReloadObserver {
 
     public boolean alert(String verbose) {
         return player.punishmentManager.handleAlert(player, verbose, this);
-    }
-
-    public DynamicConfig getConfig() {
-        return GrimAPI.INSTANCE.getConfigManager().getConfig();
     }
 
     public boolean setbackIfAboveSetbackVL() {

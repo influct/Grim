@@ -23,6 +23,7 @@ import com.github.retrooper.packetevents.event.PacketListenerPriority;
 import com.github.retrooper.packetevents.event.PacketReceiveEvent;
 import com.github.retrooper.packetevents.event.PacketSendEvent;
 import com.github.retrooper.packetevents.manager.server.ServerVersion;
+import com.github.retrooper.packetevents.netty.channel.ChannelHelper;
 import com.github.retrooper.packetevents.protocol.ConnectionState;
 import com.github.retrooper.packetevents.protocol.attribute.Attributes;
 import com.github.retrooper.packetevents.protocol.item.ItemStack;
@@ -461,37 +462,39 @@ public class CheckManagerListener extends PacketListenerAbstract {
             player.checkManager.getPacketCheck(BadPacketsX.class).handle(event, dig, block.getType());
             player.checkManager.getPacketCheck(BadPacketsZ.class).handle(event, dig);
 
-            if (dig.getAction() == DiggingAction.FINISHED_DIGGING) {
-                // Not unbreakable
-                if (!block.getType().isAir() && block.getType().getHardness() != -1.0f && !event.isCancelled()) {
-                    player.compensatedWorld.startPredicting();
-                    player.compensatedWorld.updateBlock(dig.getBlockPosition().getX(), dig.getBlockPosition().getY(), dig.getBlockPosition().getZ(), 0);
-                    player.compensatedWorld.stopPredicting(dig);
-                }
-            }
-
-            if (dig.getAction() == DiggingAction.START_DIGGING && !event.isCancelled()) {
-                double damage = BlockBreakSpeed.getBlockDamage(player, dig.getBlockPosition());
-
-                //Instant breaking, no damage means it is unbreakable by creative players (with swords)
-                if (damage >= 1) {
-                    player.compensatedWorld.startPredicting();
-                    if (player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_13) && Materials.isWaterSource(player.getClientVersion(), block)) {
-                        // Vanilla uses a method to grab water flowing, but as you can't break flowing water
-                        // We can simply treat all waterlogged blocks or source blocks as source blocks
-                        player.compensatedWorld.updateBlock(dig.getBlockPosition(), StateTypes.WATER.createBlockState(CompensatedWorld.blockVersion));
-                    } else {
-                        player.compensatedWorld.updateBlock(dig.getBlockPosition().getX(), dig.getBlockPosition().getY(), dig.getBlockPosition().getZ(), 0);
-                    }
-                    player.compensatedWorld.stopPredicting(dig);
-                }
-            }
-
-            if (!event.isCancelled()) {
-                if (dig.getAction() == DiggingAction.START_DIGGING || dig.getAction() == DiggingAction.FINISHED_DIGGING || dig.getAction() == DiggingAction.CANCELLED_DIGGING) {
-                    player.compensatedWorld.handleBlockBreakPrediction(dig);
-                }
-            }
+//            if (dig.getAction() == DiggingAction.FINISHED_DIGGING) {
+//                // Not unbreakable
+//                if (!block.getType().isAir() && block.getType().getHardness() != -1.0f && !event.isCancelled()) {
+//                    player.compensatedWorld.startPredicting();
+//                    System.out.println("updating to block air in compensated world");
+//                    player.compensatedWorld.updateBlock(dig.getBlockPosition().getX(), dig.getBlockPosition().getY(), dig.getBlockPosition().getZ(), 0);
+//                    player.compensatedWorld.stopPredicting(dig);
+//                }
+//            }
+//
+//            if (dig.getAction() == DiggingAction.START_DIGGING && !event.isCancelled()) {
+//                double damage = BlockBreakSpeed.getBlockDamage(player, dig.getBlockPosition());
+//
+//                //Instant breaking, no damage means it is unbreakable by creative players (with swords)
+//                if (damage >= 1) {
+//                    player.compensatedWorld.startPredicting();
+//                    if (player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_13) && Materials.isWaterSource(player.getClientVersion(), block)) {
+//                        // Vanilla uses a method to grab water flowing, but as you can't break flowing water
+//                        // We can simply treat all waterlogged blocks or source blocks as source blocks
+//                        player.compensatedWorld.updateBlock(dig.getBlockPosition(), StateTypes.WATER.createBlockState(CompensatedWorld.blockVersion));
+//                    } else {
+//                        System.out.println("updating to block air in compensated world");
+//                        player.compensatedWorld.updateBlock(dig.getBlockPosition().getX(), dig.getBlockPosition().getY(), dig.getBlockPosition().getZ(), 0);
+//                    }
+//                    player.compensatedWorld.stopPredicting(dig);
+//                }
+//            }
+//
+//            if (!event.isCancelled()) {
+//                if (dig.getAction() == DiggingAction.START_DIGGING || dig.getAction() == DiggingAction.FINISHED_DIGGING || dig.getAction() == DiggingAction.CANCELLED_DIGGING) {
+//                    player.compensatedWorld.handleBlockBreakPrediction(dig);
+//                }
+//            }
         }
 
         if (event.getPacketType() == PacketType.Play.Client.PLAYER_BLOCK_PLACEMENT) {
@@ -579,6 +582,11 @@ public class CheckManagerListener extends PacketListenerAbstract {
         // Finally, remove the packet state variables on this packet
         player.packetStateData.lastPacketWasOnePointSeventeenDuplicate = false;
         player.packetStateData.lastPacketWasTeleport = false;
+
+        if (event.isCancelled() && event.getPacketType() == PacketType.Play.Client.PLAYER_DIGGING) {
+            WrapperPlayClientPlayerDigging dig = new WrapperPlayClientPlayerDigging(event);
+            ChannelHelper.runInEventLoop(player.user.getChannel(), () -> player.user.sendPacket(new WrapperPlayServerAcknowledgeBlockChanges(dig.getSequence())));
+        }
     }
 
     private static void placeBucket(GrimPlayer player, InteractionHand hand) {
