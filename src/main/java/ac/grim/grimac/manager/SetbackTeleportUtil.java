@@ -393,6 +393,7 @@ public class SetbackTeleportUtil extends Check implements PostPredictionCheck {
     public void addSentTeleport(Location position, int transaction, RelativeFlag flags, boolean plugin, int teleportId) {
         TeleportData data = new TeleportData(new Vector3d(position.getX(), position.getY(), position.getZ()), flags, transaction, teleportId);
         pendingTeleports.add(data);
+        this.lastWorldResync = System.currentTimeMillis();
 
         Vector3d safePosition = new Vector3d(position.getX(), position.getY(), position.getZ());
 
